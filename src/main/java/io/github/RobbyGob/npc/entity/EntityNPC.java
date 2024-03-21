@@ -3,7 +3,6 @@ package io.github.RobbyGob.npc.entity;
 import io.github.RobbyGob.npc.init.EntityInit;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
