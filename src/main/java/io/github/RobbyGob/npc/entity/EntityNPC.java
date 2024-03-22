@@ -1,9 +1,9 @@
 package io.github.RobbyGob.npc.entity;
 
+import io.github.RobbyGob.npc.goal.tryMoveToGoal;
 import io.github.RobbyGob.npc.init.EntityInit;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -16,6 +16,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public class EntityNPC extends PathfinderMob
 {
@@ -36,18 +37,20 @@ public class EntityNPC extends PathfinderMob
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new tryMoveToGoal(this, 50d, 50d, -60, 2));
+        // leaving this part out, because it is easier to test the tryMoveToGoal and other future goals
+        /*
         this.goalSelector.addGoal(1, new TemptGoal(this, 1.5D, Ingredient.of(Items.FISHING_ROD),false));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
         this.goalSelector.addGoal(3, new MoveTowardsTargetGoal(this, 0.9D, 32.0F));
         this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
         this.targetSelector.addGoal(5, new HurtByTargetGoal(this));
-
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Mob.class, 1, false, true, (p_28879_) -> {
             return p_28879_ instanceof Enemy && !(p_28879_ instanceof Creeper);
         }));
 
+         */
     }
-
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 50D)
@@ -58,4 +61,5 @@ public class EntityNPC extends PathfinderMob
                 .add(Attributes.ATTACK_SPEED, 2f)
                 .add(Attributes.ATTACK_DAMAGE, 3f);
     }
+
 }
