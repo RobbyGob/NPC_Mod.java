@@ -2,11 +2,6 @@ package io.github.RobbyGob.npc.goal;
 
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.phys.Vec3;
-
-import java.io.Console;
-
-import static com.mojang.text2speech.Narrator.LOGGER;
 
 public class tryMoveToGoal extends Goal {
     private final PathfinderMob mob;
@@ -37,6 +32,6 @@ public class tryMoveToGoal extends Goal {
     }
 
     public void tick() {
-        this.mob.getNavigation().moveTo(xTarget, zTarget, yTarget, 2.0D);
+        this.mob.getNavigation().moveTo(xTarget, zTarget, yTarget, 1.2f);
     }
 }
