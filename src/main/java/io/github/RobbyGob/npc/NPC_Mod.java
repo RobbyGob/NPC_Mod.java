@@ -11,5 +11,6 @@ public class NPC_Mod {
     public NPC_Mod(){
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         EntityInit.ENTITIES.register(bus);
+        //testing
     }
 }
