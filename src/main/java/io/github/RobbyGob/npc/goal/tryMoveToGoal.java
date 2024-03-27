@@ -2,24 +2,16 @@ package io.github.RobbyGob.npc.goal;
 
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public class tryMoveToGoal extends Goal {
     private final PathfinderMob mob;
-    private final double xTarget, yTarget, zTarget, range;
-    /**
-     *
-     * @param mob the mob that will be walking to the target coordinate
-     * @param x the x coordinate of the target
-     * @param y the y coordinate of the target
-     * @param z the z coordinate of the target
-     * @param range how far away the mob is allowed to be from the target coordinates
-     */
-    public tryMoveToGoal(PathfinderMob mob, double x, double y, double z, double range) {
+    private  Vec3 vec3;
+
+    public tryMoveToGoal(PathfinderMob mob, Vec3 vec3) {
         this.mob = mob;
-        this.xTarget = x;
-        this.yTarget = y;
-        this.zTarget = z;
-        this.range = range;
+        this.vec3 = vec3;
     }
 
     /**
@@ -28,10 +20,22 @@ public class tryMoveToGoal extends Goal {
      */
     @Override
     public boolean canUse() {
-        return !(Math.abs(mob.getX() - xTarget) <= range) || !(Math.abs(mob.getY() - zTarget) <= range) || !(Math.abs(mob.getZ() - yTarget) <= range);
+        if(vec3 != null) {
+            AABB npcAABB = mob.getBoundingBox();
+            AABB targetAABB = new AABB(vec3, vec3).inflate(1);
+            if(!npcAABB.intersects(targetAABB))
+            {
+                return true;
+            }
+            else {
+                vec3 = null;
+                return false;
+            }
+        }
+            return false;
     }
 
     public void tick() {
-        this.mob.getNavigation().moveTo(xTarget, zTarget, yTarget, 1.2f);
+        this.mob.getNavigation().moveTo(vec3.x, vec3.y, vec3.z, 1.5f);
     }
 }

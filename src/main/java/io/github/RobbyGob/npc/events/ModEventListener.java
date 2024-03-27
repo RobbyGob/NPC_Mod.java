@@ -1,7 +1,8 @@
 package io.github.RobbyGob.npc.events;
 
 import io.github.RobbyGob.npc.NPC_Mod;
-import io.github.RobbyGob.npc.commands.SetTryMoveToCommand;
+import io.github.RobbyGob.npc.commands.MoveToPlayer;
+import io.github.RobbyGob.npc.commands.MoveToPosCommand;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -10,6 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 public class ModEventListener {
     @SubscribeEvent
     public static void registerClientCommands(RegisterClientCommandsEvent event) {
-        SetTryMoveToCommand.register(event.getDispatcher());
+        MoveToPosCommand.register(event.getDispatcher());
+        //MoveToPlayer.register(event.getDispatcher());
     }
 }

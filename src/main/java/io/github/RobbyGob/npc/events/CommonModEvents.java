@@ -1,15 +1,12 @@
 package io.github.RobbyGob.npc.events;
 
 import io.github.RobbyGob.npc.NPC_Mod;
-import io.github.RobbyGob.npc.commands.SetTryMoveToCommand;
 import io.github.RobbyGob.npc.entity.EntityNPC;
 import io.github.RobbyGob.npc.init.EntityInit;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.command.ConfigCommand;
 
 @Mod.EventBusSubscriber(modid = NPC_Mod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class CommonModEvents {

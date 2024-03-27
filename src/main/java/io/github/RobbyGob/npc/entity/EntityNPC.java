@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 public class EntityNPC extends PathfinderMob
 {
 
-    private double xTarget=0,  yTarget=0,  zTarget = -65;
+    private Vec3 vec3 = null;
     public EntityNPC(EntityType<EntityNPC> type, Level level) {
         super(type, level);
     }
@@ -40,7 +40,7 @@ public class EntityNPC extends PathfinderMob
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new tryMoveToGoal(this, xTarget, yTarget, zTarget, 1));
+        this.goalSelector.addGoal(1, new tryMoveToGoal(this, vec3));
         // leaving this part out, because it is easier to test the tryMoveToGoal and other future goals
         /*
         this.goalSelector.addGoal(1, new TemptGoal(this, 1.5D, Ingredient.of(Items.FISHING_ROD),false));
@@ -67,15 +67,8 @@ public class EntityNPC extends PathfinderMob
     {
         registerGoals();
     }
-    public void setXTarget(double x) {
-        this.xTarget = x;
+    public void setTarget(Vec3 vec3) {
+        this.vec3 = vec3;
     }
 
-    public void setYTarget(double y) {
-        this.yTarget = y;
-    }
-
-    public void setZTarget(double z) {
-        this.zTarget = z;
-    }
 }

@@ -3,11 +3,9 @@ package io.github.RobbyGob.npc.events;
 import io.github.RobbyGob.npc.NPC_Mod;
 import io.github.RobbyGob.npc.client.model.EntityNPCModel;
 import io.github.RobbyGob.npc.client.renderer.NPCEntityRenderer;
-import io.github.RobbyGob.npc.commands.SetTryMoveToCommand;
 import io.github.RobbyGob.npc.init.EntityInit;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
