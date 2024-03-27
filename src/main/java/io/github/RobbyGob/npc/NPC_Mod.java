@@ -8,7 +8,6 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 @Mod(NPC_Mod.MODID)
 public class NPC_Mod {
     public static final String MODID = "npcmod";
-    public String bs = "bs";
     public NPC_Mod(){
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         EntityInit.ENTITIES.register(bus);
