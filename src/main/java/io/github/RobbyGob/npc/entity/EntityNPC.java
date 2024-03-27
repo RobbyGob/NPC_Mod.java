@@ -17,10 +17,14 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.apache.logging.log4j.LogManager;
+
+import java.util.logging.Logger;
 
 public class EntityNPC extends PathfinderMob
 {
 
+    private Vec3 vec3 = null;
     public EntityNPC(EntityType<EntityNPC> type, Level level) {
         super(type, level);
     }
@@ -29,7 +33,6 @@ public class EntityNPC extends PathfinderMob
         this(EntityInit.NPC_ENTITY.get(), level);
         setPos(x, y, z);
     }
-
     public EntityNPC(Level level, BlockPos position) {
         this(level, position.getX(), position.getY(), position.getZ());
     }
@@ -37,7 +40,7 @@ public class EntityNPC extends PathfinderMob
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new tryMoveToGoal(this, 50d, 50d, -60, 2));
+        this.goalSelector.addGoal(1, new tryMoveToGoal(this, vec3));
         // leaving this part out, because it is easier to test the tryMoveToGoal and other future goals
         /*
         this.goalSelector.addGoal(1, new TemptGoal(this, 1.5D, Ingredient.of(Items.FISHING_ROD),false));
@@ -48,7 +51,6 @@ public class EntityNPC extends PathfinderMob
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Mob.class, 1, false, true, (p_28879_) -> {
             return p_28879_ instanceof Enemy && !(p_28879_ instanceof Creeper);
         }));
-
          */
     }
     public static AttributeSupplier.Builder createAttributes() {
@@ -60,6 +62,13 @@ public class EntityNPC extends PathfinderMob
                 .add(Attributes.ATTACK_KNOCKBACK, 1f)
                 .add(Attributes.ATTACK_SPEED, 2f)
                 .add(Attributes.ATTACK_DAMAGE, 3f);
+    }
+    public void updateGoals()
+    {
+        registerGoals();
+    }
+    public void setTarget(Vec3 vec3) {
+        this.vec3 = vec3;
     }
 
 }

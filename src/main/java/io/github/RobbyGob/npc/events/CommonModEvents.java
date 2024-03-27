@@ -14,5 +14,6 @@ public class CommonModEvents {
     public static void entityAttributes(EntityAttributeCreationEvent event)
     {
         event.put(EntityInit.NPC_ENTITY.get(), EntityNPC.createAttributes().build());
+
     }
 }
