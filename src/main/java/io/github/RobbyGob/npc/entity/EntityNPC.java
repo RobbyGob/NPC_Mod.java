@@ -1,8 +1,11 @@
 package io.github.RobbyGob.npc.entity;
 
+import io.github.RobbyGob.npc.entity.inventory.NPCInventory;
 import io.github.RobbyGob.npc.goal.tryMoveToGoal;
 import io.github.RobbyGob.npc.init.EntityInit;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
@@ -11,22 +14,30 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.ForgeHooks;
 import org.apache.logging.log4j.LogManager;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 public class EntityNPC extends PathfinderMob
 {
-
+    private final NPCInventory inventory;
     private Vec3 vec3 = null;
     public EntityNPC(EntityType<EntityNPC> type, Level level) {
         super(type, level);
+        this.inventory = new NPCInventory(this);
     }
 
     public EntityNPC(Level level, double x, double y, double z) {
@@ -71,4 +82,52 @@ public class EntityNPC extends PathfinderMob
         this.vec3 = vec3;
     }
 
+    // Method to check for nearby items and pick them up
+    private void pickUpItems() {
+        if (this.isAlive()) {
+            AABB pickupRange = new AABB(getX() - 2.0D, getY() - 1.0D, getZ() - 2.0D, getX() + 2.0D, getY() + 1.0D, getZ() + 2.0D);
+            level().getEntitiesOfClass(ItemEntity.class, pickupRange).forEach(itemEntity -> {
+                ItemStack stack = itemEntity.getItem();
+                if (!stack.isEmpty()) {
+                    // Try adding the item to the NPC's inventory
+                    if (inventory.addItem(stack)) {
+                        itemEntity.remove(RemovalReason.UNLOADED_TO_CHUNK);
+                    }
+                }
+            });
+        }
+    }
+
+    // Override tick method to periodically check for nearby items
+    @Override
+    public void tick() {
+        super.tick();
+        if (!this.level().isClientSide) {
+            pickUpItems();
+        }
+    }
+
+    @Override
+    protected void dropAllDeathLoot(DamageSource pDamageSource) {
+        Entity entity = pDamageSource.getEntity();
+        int lootingLevel = ForgeHooks.getLootingLevel(this, entity, pDamageSource);
+        this.captureDrops(new ArrayList<>());
+        boolean killedByPlayer = this.lastHurtByPlayerTime > 0;
+
+        if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+            this.dropFromLootTable(pDamageSource, killedByPlayer);
+            this.dropCustomDeathLoot(pDamageSource, lootingLevel, killedByPlayer);
+        }
+
+        this.dropEquipment();
+        this.dropExperience();
+
+        // Drop the NPC's inventory
+        inventory.dropAllItems(this.getX(), this.getY(), this.getZ(), this.level());
+
+        Collection<ItemEntity> drops = this.captureDrops((Collection<ItemEntity>) null);
+        if (!ForgeHooks.onLivingDrops(this, pDamageSource, drops, lootingLevel, killedByPlayer)) {
+            drops.forEach(e -> this.level().addFreshEntity(e));
+        }
+    }
 }

@@ -13,7 +13,7 @@ public class NPCEntityRenderer extends HumanoidMobRenderer<EntityNPC, HumanoidMo
 
     //Does not load the textures of the NPC. NEEDS FIXING, but god-damn I can't find the solution
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation(NPC_Mod.MODID, "assets/npc/textures/entity/npc_skin.png");
+            new ResourceLocation(NPC_Mod.MODID, "textures/entity/npc_skin.png");
 /*Testing grounds*/
     public NPCEntityRenderer(EntityRendererProvider.Context ctx) {
         super(ctx, new EntityNPCModel<>(ctx.bakeLayer(EntityNPCModel.LAYER_LOCATION)), 0.5f);
