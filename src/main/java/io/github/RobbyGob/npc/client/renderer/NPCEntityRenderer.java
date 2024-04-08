@@ -11,7 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 
 public class NPCEntityRenderer extends HumanoidMobRenderer<EntityNPC, HumanoidModel<EntityNPC>> {
 
-    //Does not load the textures of the NPC. NEEDS FIXING, but god-damn I can't find the solution
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(NPC_Mod.MODID, "textures/entity/npc_skin.png");
 /*Testing grounds*/

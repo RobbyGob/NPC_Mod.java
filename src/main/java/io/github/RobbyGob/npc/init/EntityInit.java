@@ -13,7 +13,7 @@ public class EntityInit {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, NPC_Mod.MODID);
     public static final RegistryObject<EntityType<EntityNPC>> NPC_ENTITY = ENTITIES.register("npc",
             () -> EntityType.Builder.<EntityNPC>of(EntityNPC::new, MobCategory.CREATURE)
-                    .sized(1.0f, 2.0f)
+                    .sized(0.6F, 1.8F)
                     .build(new ResourceLocation(NPC_Mod.MODID, "npc").toString())
     );
 }
