@@ -12,34 +12,27 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
-import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.ForgeHooks;
-import org.apache.logging.log4j.LogManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.logging.Logger;
 
 public class EntityNPC extends PathfinderMob
 {
     private final NPCInventory inventory;
     private Vec3 vec3 = null;
+    private boolean isStopped = false;
+
     public EntityNPC(EntityType<EntityNPC> type, Level level) {
         super(type, level);
         this.inventory = new NPCInventory(this);
     }
-
     public EntityNPC(Level level, double x, double y, double z) {
         this(EntityInit.NPC_ENTITY.get(), level);
         setPos(x, y, z);
@@ -51,9 +44,9 @@ public class EntityNPC extends PathfinderMob
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new tryMoveToGoal(this, vec3));
-        // leaving this part out, because it is easier to test the tryMoveToGoal and other future goals
-        /*
+        this.goalSelector.addGoal(1, new tryMoveToGoal(this, vec3, isStopped));
+        /* leaving this part out, because it is easier to test the tryMoveToGoal and other future goals
+
         this.goalSelector.addGoal(1, new TemptGoal(this, 1.5D, Ingredient.of(Items.FISHING_ROD),false));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
         this.goalSelector.addGoal(3, new MoveTowardsTargetGoal(this, 0.9D, 32.0F));
@@ -64,6 +57,7 @@ public class EntityNPC extends PathfinderMob
         }));
          */
     }
+
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 50D)
@@ -74,12 +68,19 @@ public class EntityNPC extends PathfinderMob
                 .add(Attributes.ATTACK_SPEED, 2f)
                 .add(Attributes.ATTACK_DAMAGE, 3f);
     }
-    public void updateGoals()
-    {
+    public void setNewTarget(Vec3 vec3) {
+        this.vec3 = vec3;
         registerGoals();
     }
-    public void setTarget(Vec3 vec3) {
-        this.vec3 = vec3;
+    public void stopNPC()
+    {
+        this.isStopped = true;
+        registerGoals();
+    }
+    public void continueNPC()
+    {
+        this.isStopped = false;
+        registerGoals();
     }
 
     // Method to check for nearby items and pick them up
