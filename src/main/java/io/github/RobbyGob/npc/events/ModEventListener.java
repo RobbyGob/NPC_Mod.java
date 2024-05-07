@@ -2,7 +2,9 @@ package io.github.RobbyGob.npc.events;
 
 import io.github.RobbyGob.npc.NPC_Mod;
 import io.github.RobbyGob.npc.commands.ControlCommands;
+import io.github.RobbyGob.npc.test.GameTests;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
+import net.minecraftforge.event.RegisterGameTestsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -12,4 +14,11 @@ public class ModEventListener {
     public static void registerClientCommands(RegisterClientCommandsEvent event) {
         ControlCommands.register(event.getDispatcher());
     }
+/*
+    @SubscribeEvent
+    public static void onRegisterGameTests(RegisterGameTestsEvent event) {
+        event.register(GameTests.class);
+    }
+
+ */
 }

@@ -12,8 +12,14 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -28,6 +34,9 @@ public class EntityNPC extends PathfinderMob
     private final NPCInventory inventory;
     private Vec3 vec3 = null;
     private boolean isStopped = false;
+    private MeleeAttackGoal attackGoal;
+    private NearestAttackableTargetGoal<?> nearestAttackableTargetGoal;
+    private TemptGoal temptGoal;
 
     public EntityNPC(EntityType<EntityNPC> type, Level level) {
         super(type, level);
@@ -45,17 +54,25 @@ public class EntityNPC extends PathfinderMob
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new tryMoveToGoal(this, vec3, isStopped));
+
+        this.goalSelector.addGoal(2, attackGoal = new MeleeAttackGoal(this, 1.0D, true));
+        this.targetSelector.addGoal(3, nearestAttackableTargetGoal = new NearestAttackableTargetGoal<>(this, Mob.class, 1, false, true, (p_28879_) -> {
+            return p_28879_ instanceof Enemy && !(p_28879_ instanceof Creeper);
+        }));
+        this.goalSelector.addGoal(4, temptGoal=new TemptGoal(this, 1.5D, Ingredient.of(Items.FISHING_ROD),false));
         /* leaving this part out, because it is easier to test the tryMoveToGoal and other future goals
 
-        this.goalSelector.addGoal(1, new TemptGoal(this, 1.5D, Ingredient.of(Items.FISHING_ROD),false));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
         this.goalSelector.addGoal(3, new MoveTowardsTargetGoal(this, 0.9D, 32.0F));
         this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
         this.targetSelector.addGoal(5, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Mob.class, 1, false, true, (p_28879_) -> {
-            return p_28879_ instanceof Enemy && !(p_28879_ instanceof Creeper);
-        }));
          */
+    }
+
+    public void neutral(){
+        this.goalSelector.removeGoal(attackGoal);
+        this.targetSelector.removeGoal(nearestAttackableTargetGoal);
+        this.goalSelector.removeGoal(temptGoal);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -64,23 +81,44 @@ public class EntityNPC extends PathfinderMob
                 .add(Attributes.FOLLOW_RANGE, 50D)
                 .add(Attributes.MOVEMENT_SPEED, 0.25D)
                 .add(Attributes.ARMOR_TOUGHNESS, 0.1f)
-                .add(Attributes.ATTACK_KNOCKBACK, 1f)
+                .add(Attributes.ATTACK_KNOCKBACK, 0f)
                 .add(Attributes.ATTACK_SPEED, 2f)
-                .add(Attributes.ATTACK_DAMAGE, 3f);
+                .add(Attributes.ATTACK_DAMAGE, 4f);
     }
     public void setNewTarget(Vec3 vec3) {
         this.vec3 = vec3;
         registerGoals();
     }
+    public boolean inventoryIsEmpty()
+    {
+        return inventory.isEmpty();
+    }
+
+    public Vec3 getVec3() {
+        return vec3;
+    }
+
     public void stopNPC()
     {
         this.isStopped = true;
         registerGoals();
+        neutral();
     }
     public void continueNPC()
     {
         this.isStopped = false;
         registerGoals();
+        neutral();
+    }
+
+    public void addItem(Item item)
+    {
+        inventory.addItem(new ItemStack(item));
+    }
+
+    public void clearInventory()
+    {
+        inventory.clearContent();
     }
 
     // Method to check for nearby items and pick them up

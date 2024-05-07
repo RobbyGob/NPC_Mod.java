@@ -7,117 +7,111 @@ import io.github.RobbyGob.npc.entity.EntityNPC;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.ai.goal.MoveToBlockGoal;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.Objects;
 
 import static net.minecraft.world.level.Level.OVERWORLD;
 
 public class ControlCommands {
+    private static final double OFFSET_X = 0.5;
+    private static final double OFFSET_Z = 0.5;
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher){
         dispatcher.register(Commands.literal("npc")
                 .then(Commands.literal("moveTo")
                         .then(Commands.argument("destination", Vec3Argument.vec3()).executes(ControlCommands::moveToPos))
-                        .then(Commands.literal("player").executes(ControlCommands::moveToPlayer))
-                        .then(Commands.literal("stop").executes(ControlCommands::stop)))
+                        .then(Commands.literal("player").executes(ControlCommands::moveToPlayer)))
                 .then(Commands.literal("pause").executes(ControlCommands::pause))
                 .then(Commands.literal("unpause").executes(ControlCommands::unpause)));
     }
     public static int moveToPlayer(CommandContext<CommandSourceStack> command)
     {
-        if(command.getSource().getEntity() instanceof Player player) {
-            Vec3 vec3 = player.position();
-            String destinationString = String.format("x: %.4f; z: %.4f; y: %.4f", vec3.x-0.5, vec3.y, vec3.z-0.5);
-            player.sendSystemMessage(Component.literal(destinationString));
+        Player player = getPlayer(command.getSource());
+        if (player != null) {
+            Vec3 playerPosition = player.position();
+            sendDestinationMessage(player, playerPosition);
 
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-            ServerLevel world = server.getLevel(OVERWORLD);
-
-            List<EntityNPC> npcList = world.getEntitiesOfClass(EntityNPC.class, new AABB(player.blockPosition()).inflate(100));
-            player.sendSystemMessage(Component.literal("Number of NPCs: " + npcList.size()));
-            for (EntityNPC npc : npcList) {
-                npc.setNewTarget(vec3);
-            }
+            List<EntityNPC> npcList = getNPCsInRange(Objects.requireNonNull(ServerLifecycleHooks.getCurrentServer().getLevel(OVERWORLD)), player.blockPosition(), 10);
+            sendNPCCountMessage(player, npcList.size());
+            moveNPCsToTarget(npcList, playerPosition);
         }
-
         return Command.SINGLE_SUCCESS;
     }
-    public static int moveToPos(CommandContext<CommandSourceStack> command)
-    {
-        Vec3 vec3 = Vec3Argument.getVec3(command, "destination");
-        String destinationString = String.format("x: %.4f; z: %.4f; y: %.4f", vec3.x-0.5, vec3.y, vec3.z-0.5);
+    public static int moveToPos(CommandContext<CommandSourceStack> command) {
+        Vec3 destination = Vec3Argument.getVec3(command, "destination");
+        Player player = getPlayer(command.getSource());
 
-        if(command.getSource().getEntity() instanceof Player player) {
-            player.sendSystemMessage(Component.literal(destinationString));
-
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-            ServerLevel world = server.getLevel(OVERWORLD);
-
-            List<EntityNPC> npcList = world.getEntitiesOfClass(EntityNPC.class, new AABB(player.blockPosition()).inflate(100));
-            player.sendSystemMessage(Component.literal("Number of NPCs: " + npcList.size()));
-            for (EntityNPC npc : npcList) {
-                npc.setNewTarget(vec3);
-            }
+        if (player != null) {
+            sendDestinationMessage(player, destination);
+            List<EntityNPC> npcList = getNPCsInRange(Objects.requireNonNull(ServerLifecycleHooks.getCurrentServer().getLevel(OVERWORLD)), player.blockPosition(), 100);
+            sendNPCCountMessage(player, npcList.size());
+            moveNPCsToTarget(npcList, destination);
         }
-
         return Command.SINGLE_SUCCESS;
     }
-    public static int pause(CommandContext<CommandSourceStack> command)
-    {
+    public static int pause(CommandContext<CommandSourceStack> command) {
+        Player player = getPlayer(command.getSource());
 
-        if(command.getSource().getEntity() instanceof Player player) {
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-            ServerLevel world = server.getLevel(OVERWORLD);
-            List<EntityNPC> npcList = world.getEntitiesOfClass(EntityNPC.class, new AABB(player.blockPosition()).inflate(100));
+        if (player != null) {
+            sendControlMessage(player, "Pause");
+            controlNPCs(player, false);
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+    public static int unpause(CommandContext<CommandSourceStack> command) {
+        Player player = getPlayer(command.getSource());
 
-            player.sendSystemMessage(Component.literal("Pause"));
-            player.sendSystemMessage(Component.literal("Number of NPCs: " + npcList.size()));
+        if (player != null) {
+            sendControlMessage(player, "Unpause");
+            controlNPCs(player, true);
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+    private static void controlNPCs(Player player, boolean continueNPCs) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        ServerLevel world = server.getLevel(OVERWORLD);
 
-            for (EntityNPC npc : npcList) {
+        List<EntityNPC> npcList = getNPCsInRange(world, player.blockPosition(), 10);
+        sendNPCCountMessage(player, npcList.size());
+
+        for (EntityNPC npc : npcList) {
+            if (continueNPCs) {
+                npc.continueNPC();
+            } else {
                 npc.stopNPC();
             }
         }
-        return Command.SINGLE_SUCCESS;
     }
-    public static int unpause(CommandContext<CommandSourceStack> command)
-    {
-        if(command.getSource().getEntity() instanceof Player player) {
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-            ServerLevel world = server.getLevel(OVERWORLD);
-            List<EntityNPC> npcList = world.getEntitiesOfClass(EntityNPC.class, new AABB(player.blockPosition()).inflate(100));
-
-            player.sendSystemMessage(Component.literal("Unpause"));
-            player.sendSystemMessage(Component.literal("Number of NPCs: " + npcList.size()));
-
-            for (EntityNPC npc : npcList) {
-                npc.continueNPC();
-            }
-        }
-        return Command.SINGLE_SUCCESS;
+    private static Player getPlayer(CommandSourceStack source) {
+        Entity entity = source.getEntity();
+        return (entity instanceof Player) ? (Player) entity : null;
     }
-    public static int stop(CommandContext<CommandSourceStack> command)
-    {
-        if(command.getSource().getEntity() instanceof Player player) {
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-            ServerLevel world = server.getLevel(OVERWORLD);
-            List<EntityNPC> npcList = world.getEntitiesOfClass(EntityNPC.class, new AABB(player.blockPosition()).inflate(100));
-
-            player.sendSystemMessage(Component.literal("Stop"));
-            player.sendSystemMessage(Component.literal("Number of NPCs: " + npcList.size()));
-
-            for (EntityNPC npc : npcList) {
-
-            }
+    private static void sendDestinationMessage(Player player, Vec3 position) {
+        String destinationString = String.format("x: %.4f; z: %.4f; y: %.4f", position.x - OFFSET_X, position.y, position.z - OFFSET_Z);
+        player.sendSystemMessage(Component.literal(destinationString));
+    }
+    private static List<EntityNPC> getNPCsInRange(ServerLevel world, BlockPos playerPosition, double range) {
+        return world.getEntitiesOfClass(EntityNPC.class, new AABB(playerPosition).inflate(range));
+    }
+    private static void sendNPCCountMessage(Player player, int count) {
+        player.sendSystemMessage(Component.literal("Number of NPCs: " + count));
+    }
+    private static void sendControlMessage(Player player, String message) {
+        player.sendSystemMessage(Component.literal(message));
+    }
+    static void moveNPCsToTarget(List<EntityNPC> npcList, Vec3 target) {
+        for (EntityNPC npc : npcList) {
+            npc.setNewTarget(target);
         }
-        return Command.SINGLE_SUCCESS;
     }
 }
