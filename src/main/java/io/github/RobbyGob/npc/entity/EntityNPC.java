@@ -4,6 +4,9 @@ import io.github.RobbyGob.npc.entity.inventory.NPCInventory;
 import io.github.RobbyGob.npc.goal.tryMoveToGoal;
 import io.github.RobbyGob.npc.init.EntityInit;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -16,6 +19,11 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,7 +37,7 @@ import net.minecraftforge.common.ForgeHooks;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class EntityNPC extends PathfinderMob
+public class EntityNPC extends PathfinderMob implements MenuProvider
 {
     private final NPCInventory inventory;
     private Vec3 vec3 = null;
@@ -168,5 +176,18 @@ public class EntityNPC extends PathfinderMob
         if (!ForgeHooks.onLivingDrops(this, pDamageSource, drops, lootingLevel, killedByPlayer)) {
             drops.forEach(e -> this.level().addFreshEntity(e));
         }
+    }
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (!this.level().isClientSide) {
+            if (hand == InteractionHand.MAIN_HAND) {
+                player.openMenu(this); // Open the inventory GUI
+            }
+        }
+        return InteractionResult.SUCCESS;
+    }
+    @Override
+    public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player playerEntity) {
+        return new ChestMenu(MenuType.GENERIC_9x4, syncId, playerInventory, inventory, 4); //cia paprastas variantas kur matomas NPC inventorius kaip chestas
     }
 }
