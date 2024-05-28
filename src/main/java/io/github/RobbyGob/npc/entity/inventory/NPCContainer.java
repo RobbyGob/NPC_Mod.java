@@ -705,4 +705,61 @@ public class NPCContainer implements Container {
         return 64;
     }
 
+    public boolean containsItem(Item item)
+    {
+        for (NonNullList<ItemStack> compartment : this.compartments) {
+            for (ItemStack stack : compartment) {
+                if (!stack.isEmpty() && stack.is(item)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public ItemStack getItemStack(Item item) {
+        for (int i = 0; i < this.getContainerSize(); i++) {
+            ItemStack stack = this.getItem(i);
+            if (!stack.isEmpty() && stack.getItem() == item) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+    public boolean setArmorInSlot(int slot, ItemStack stack) {
+        if (slot >= 0 && slot < this.armor.size() && this.isValidArmorSlot(slot, stack)) {
+            this.armor.set(slot, stack);
+            return true;
+        }
+        return false;
+    }
+    public boolean isValidArmorSlot(int slot, ItemStack stack) {
+        if (slot >= 0 && slot < this.armor.size()) {
+
+            if (!stack.isEmpty() && stack.getItem() instanceof ArmorItem)
+            {
+                ArmorItem armorItem = (ArmorItem) stack.getItem();
+                ArmorItem.Type equipmentSlot = armorItem.getType();
+
+                switch (equipmentSlot) {
+                    case HELMET:
+                        return slot == 3; // Only allow helmet in the helmet slot
+                    case CHESTPLATE:
+                        return slot == 2; // Only allow chestplate in the chestplate slot
+                    case LEGGINGS:
+                        return slot == 1; // Only allow leggings in the leggings slot
+                    case BOOTS:
+                        return slot == 0; // Only allow boots in the boots slot
+                    default:
+                        return false;
+                }
+            }
+        }
+        return false;
+    }
+    public void equipArmor() {
+        owner.setItemSlot(EquipmentSlot.HEAD,this.armor.get(3));
+        owner.setItemSlot(EquipmentSlot.CHEST,this.armor.get(2));
+        owner.setItemSlot(EquipmentSlot.LEGS,this.armor.get(1));
+        owner.setItemSlot(EquipmentSlot.FEET,this.armor.get(0));
+    }
 }

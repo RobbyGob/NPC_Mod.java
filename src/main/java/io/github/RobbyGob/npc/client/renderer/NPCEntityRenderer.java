@@ -6,8 +6,10 @@ import io.github.RobbyGob.npc.NPC_Mod;
 import io.github.RobbyGob.npc.client.model.EntityNPCModel;
 import io.github.RobbyGob.npc.entity.EntityNPC;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.HumanoidArmorModel;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.model.ItemTransform;
@@ -17,6 +19,8 @@ import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.entity.MinecartRenderer;
 import net.minecraft.client.renderer.entity.layers.FoxHeldItemLayer;
+import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -30,11 +34,15 @@ public class NPCEntityRenderer extends HumanoidMobRenderer<EntityNPC, HumanoidMo
 
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(NPC_Mod.MODID, "textures/entity/npc_skin.png");
-/*Testing grounds*/
+
     public NPCEntityRenderer(EntityRendererProvider.Context ctx) {
         super(ctx, new EntityNPCModel<>(ctx.bakeLayer(EntityNPCModel.LAYER_LOCATION)), 0.5f);
-    }
+        this.addLayer(new HumanoidArmorLayer<>(this,
+                new HumanoidArmorModel<>(ctx.bakeLayer(ModelLayers.PLAYER_SLIM_INNER_ARMOR)),
+                new HumanoidArmorModel<>(ctx.bakeLayer(ModelLayers.PLAYER_SLIM_OUTER_ARMOR)),
+                ctx.getModelManager()));
 
+    }
     @Override
     public void render(EntityNPC pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
         super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
