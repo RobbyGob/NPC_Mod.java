@@ -11,6 +11,8 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -23,6 +25,11 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Abilities;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.GameRules;
@@ -40,7 +47,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class EntityNPC extends PathfinderMob
+import static io.github.RobbyGob.npc.item.ModItems.NPC_CONTROLLER;
+
+public class EntityNPC extends PathfinderMob implements MenuProvider
 {
     private boolean IS_FARMING = false;
     private boolean IS_HUNTING = false;
@@ -68,7 +77,7 @@ public class EntityNPC extends PathfinderMob
     protected void registerGoals() {
         // Basic goals
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new TemptGoal(this, 1.5D, Ingredient.of(Items.FISHING_ROD), false));
+        this.goalSelector.addGoal(1, new TemptGoal(this, 1.5D, Ingredient.of(NPC_CONTROLLER.get()), false));
         this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
         this.targetSelector.addGoal(3, new HurtByTargetGoal(this));
         this.goalSelector.addGoal(4, new MoveTowardsTargetGoal(this, 0.9D, 32.0F));
@@ -164,7 +173,6 @@ public class EntityNPC extends PathfinderMob
     public void stopNPC()
     {
         removeAllGoals();
-
     }
     public void continueNPC()
     {
@@ -537,5 +545,40 @@ public class EntityNPC extends PathfinderMob
 
     public void setMainhand(ItemStack stack){
         this.mainhand = stack;
+    }
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (!this.level().isClientSide) {
+            ItemStack heldItem = player.getItemInHand(hand);
+
+            if (heldItem.getItem() == Items.POTATO && this.getHealth() < this.getMaxHealth()) {
+                this.heal(4.0F); // Heal for 2 hearts (4 health points)
+                heldItem.shrink(1); // Consume one potato
+                this.playSound(SoundEvents.PLAYER_BURP, 1.0F, 1.0F);
+                return InteractionResult.SUCCESS;
+            }
+            if (hand == InteractionHand.MAIN_HAND) {
+                player.openMenu(this); // Open the inventory GUI
+                return InteractionResult.SUCCESS;
+            }
+        }
+        return InteractionResult.PASS;
+    }
+    @Override
+    public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player playerEntity) {
+        return new ChestMenu(MenuType.GENERIC_9x4, syncId, playerInventory, inventory, 4); //cia paprastas variantas kur matomas NPC inventorius kaip chestas
+    }
+    public void addItem(Item item)
+    {
+        inventory.add(new ItemStack(item));
+    }
+
+    public void clearInventory()
+    {
+        inventory.clearContent();
+    }
+    public boolean inventoryIsEmpty()
+    {
+        return inventory.isEmpty();
     }
 }
