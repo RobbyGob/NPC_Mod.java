@@ -36,7 +36,6 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -149,6 +148,7 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
     public void startFarming()
     {
         IS_FARMING = true;
+        this.setItemSlot(EquipmentSlot.MAINHAND, (this.getTool(ItemTags.HOES, "hoe")));
         updateGoals();
     }
 
@@ -161,6 +161,7 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
     public void startHunting()
     {
         IS_HUNTING = true;
+        this.setItemSlot(EquipmentSlot.MAINHAND, this.getTool(ItemTags.SWORDS, "sword"));
         updateGoals();
     }
 
@@ -262,6 +263,10 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
                     // Try adding the item to the NPC's inventory
                     if (inventory.add(stack)) {
                         itemEntity.remove(RemovalReason.UNLOADED_TO_CHUNK);
+                        this.inventory.equipBestArmor(Tags.Items.ARMORS_HELMETS);
+                        this.inventory.equipBestArmor(Tags.Items.ARMORS_CHESTPLATES);
+                        this.inventory.equipBestArmor(Tags.Items.ARMORS_LEGGINGS);
+                        this.inventory.equipBestArmor(Tags.Items.ARMORS_BOOTS);
                     }
                 }
             });
@@ -289,7 +294,6 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
             this.dropCustomDeathLoot(pDamageSource, lootingLevel, killedByPlayer);
         }
 
-        this.dropEquipment();
 
         // Drop the NPC's inventory
         inventory.dropAllItems(this.getX(), this.getY(), this.getZ(), this.level());
@@ -308,124 +312,24 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
         ItemStack toolToUse = this.inventory.findBestTool(toolTag);
         if (toolToUse.isEmpty()) {
             System.out.println("No " + toolName + " found");
-            return null;
+            return ItemStack.EMPTY;
         }
-        this.setMainhand(toolToUse);
-        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(toolToUse.getItem()));
+        System.out.println("tool to use: "+ toolToUse.getDisplayName().getString());
         return toolToUse;
     }
-    public void attack(LivingEntity targetEntity) {
-        if (targetEntity == null) {
-            return;
-        }
-
-        // Assuming a simple attack behavior for the NPC
-        // You can customize this logic based on your game's combat system
-        float damageAmount = getMainHandItem().getDamageValue(); // Adjust the damage amount as needed
-
-        // Apply damage to the target entity
-        DamageSource damageSource = damageSources().mobAttack(this);
-        targetEntity.hurt(damageSource, damageAmount);
-    }
-
-    public void useSword(Entity target) {
-        ItemStack stack = getTool(ItemTags.SWORDS, "sword");
-        if(stack == null){
-            return;
-        }
-        Level world = this.level();
-        // Assuming the NPC should attack the target entity
-        // You can adjust this logic based on your requirements
-        this.attack((LivingEntity) target);
-
-        // Play attack sound or any other effects
-        // For example, if the NPC is a mob, you can play a sound effect like this:
-        this.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.0f, 1.0f);
-
-        // Damage the sword
-        this.hurtMainItemInHand();
-    }
-    public void useAxe(BlockPos blockPos) {
-        ItemStack stack = getTool(ItemTags.AXES, "axe");
-        if(stack == null){
-            return;
-        }
-        Level world = this.level();
-        AxeItem axe = (AxeItem) stack.getItem();
-        if (world.getBlockState(blockPos).is(BlockTags.MINEABLE_WITH_AXE)) {
-            Vec3 pos = this.position();
-            double radiusSq = pos.distanceToSqr(Vec3.atCenterOf(blockPos));
-            if(radiusSq <= 9){
-                float speed = world.getBlockState(blockPos).getDestroySpeed(world, blockPos);
-                world.destroyBlock(blockPos, true);
-
-                hurtMainItemInHand();
-            }
-        }
-        System.out.println(this.getMainHandItem().getDisplayName().getString());
-    }
-
-
-    public void usePickaxe(BlockPos blockPos) {
-        ItemStack stack = getTool(ItemTags.PICKAXES, "pickaxe");
-        if(stack == null){
-            return;
-        }
-        Level world = this.level();
-        PickaxeItem pickaxe = (PickaxeItem) stack.getItem();
-        if (world.getBlockState(blockPos).is(BlockTags.MINEABLE_WITH_PICKAXE)) {
-            Vec3 pos = this.position();
-            double radiusSq = pos.distanceToSqr(Vec3.atCenterOf(blockPos));
-            if(radiusSq <= 9){
-                world.destroyBlock(blockPos, true);
-
-                hurtMainItemInHand();
-            }
-        }
-        System.out.println(this.getMainHandItem().getDisplayName().getString());
-    }
-
-    public void useShovel(BlockPos blockPos) {
-        ItemStack shovelStack = getTool(ItemTags.SHOVELS, "shovel");
-        if(shovelStack == null){
-            return;
-        }
-        Level world = this.level();
-        ShovelItem shovel = (ShovelItem) shovelStack.getItem();
-        if (world.getBlockState(blockPos).is(BlockTags.MINEABLE_WITH_SHOVEL)) {
-            Vec3 pos = this.position();
-            double radiusSq = pos.distanceToSqr(Vec3.atCenterOf(blockPos));
-            if(radiusSq <= 9){
-                world.destroyBlock(blockPos, true);
-
-                hurtMainItemInHand();
-            }
-        }
-        System.out.println(this.getMainHandItem().getDisplayName().getString());
-    }
-
-    public void useHoe(BlockPos blockPos) {
-        ItemStack hoeStack = getTool(ItemTags.HOES, "hoe");
-        if (hoeStack == null) {
-            return;
-        }
-        Level world = this.level();
-        if (world.getBlockState(blockPos).is(Blocks.GRASS_BLOCK) || world.getBlockState(blockPos).is(Blocks.DIRT)) {
-            Vec3 pos = this.position();
-            double radiusSq = pos.distanceToSqr(Vec3.atCenterOf(blockPos));
-            if(radiusSq <= 9){
-                if(world.getBlockState(blockPos).is(BlockTags.MINEABLE_WITH_HOE)){
-                    world.destroyBlock(blockPos, true);
-                }
-
-                // Convert the block at the position into farmland
-                world.setBlockAndUpdate(blockPos, Blocks.FARMLAND.defaultBlockState());
-                this.playSound(SoundType.CROP.getBreakSound());
-                hurtMainItemInHand();
-            }
-        }
-        System.out.println(this.getMainHandItem().getDisplayName().getString());
-    }
+//    public void attack(LivingEntity targetEntity) {
+//        if (targetEntity == null) {
+//            return;
+//        }
+//
+//        // Assuming a simple attack behavior for the NPC
+//        // You can customize this logic based on your game's combat system
+//        float damageAmount = getMainHandItem().getDamageValue(); // Adjust the damage amount as needed
+//
+//        // Apply damage to the target entity
+//        DamageSource damageSource = damageSources().mobAttack(this);
+//        targetEntity.hurt(damageSource, damageAmount);
+//    }
     public void useAndPlaceBlock(BlockPos targetPos, Block blockToPlace) {
         ItemStack blockStack = this.inventory.getBlock(blockToPlace); // Implement this method to retrieve the block from NPC's inventory
         if (blockStack == null) {
@@ -530,6 +434,12 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
         getMainHandItem().hurtAndBreak(damageAmount, this, (entity) -> {
             entity.broadcastBreakEvent(InteractionHand.MAIN_HAND);
         });
+    }
+    @Override
+    public boolean hurt(DamageSource pSource, float pAmount) {
+        int[] equipmentIndex = {0, 1, 2, 3};
+        this.inventory.hurtArmor(pSource, pAmount, equipmentIndex);
+        return super.hurt(pSource, pAmount);
     }
 
     @Override

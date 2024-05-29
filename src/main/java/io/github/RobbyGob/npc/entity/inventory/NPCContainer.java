@@ -756,6 +756,71 @@ public class NPCContainer implements Container {
         }
         return false;
     }
+
+    public ItemStack equipBestArmor(TagKey<Item> tag){
+        ItemStack bestArmor = ItemStack.EMPTY;
+        int maxTier = 0;
+
+        // Find the best armor in the inventory
+        for (int i = 0; i < this.getContainerSize(); i++) {
+            ItemStack stack = this.getItem(i);
+            if (stack.is(tag) && stack.getItem() instanceof ArmorItem) {
+                ArmorItem armor = (ArmorItem) stack.getItem();
+                int tier = getMaterialTier(armor.getMaterial());
+                if (tier > maxTier) {
+                    bestArmor = stack;
+                    maxTier = tier;
+                }
+            }
+        }
+
+        int armorIndex = getArmorIndex(tag);
+        if (armorIndex == -1) {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack currentArmor = this.armor.get(armorIndex);
+
+        if (bestArmor.isEmpty()) {
+            System.out.println("No better armor found for tag: " + tag.location());
+            return ItemStack.EMPTY;
+        }
+
+        if (currentArmor.isEmpty() || !(currentArmor.getItem() instanceof ArmorItem)){
+            this.removeItem(bestArmor);
+            this.armor.set(armorIndex, bestArmor.copy());
+            this.owner.setItemSlot(EquipmentSlot.byTypeAndIndex(EquipmentSlot.Type.ARMOR, armorIndex), bestArmor.copy());
+        }else if(!currentArmor.isEmpty() && getMaterialTier(((ArmorItem) currentArmor.getItem()).getMaterial()) < maxTier) {
+            // Equip the best armor
+            this.add(currentArmor);
+            this.removeItem(bestArmor);
+            this.armor.set(armorIndex, bestArmor.copy());
+            this.owner.setItemSlot(EquipmentSlot.byTypeAndIndex(EquipmentSlot.Type.ARMOR, armorIndex), bestArmor.copy());
+            System.out.println("Equipped new armor: " + bestArmor.getDisplayName().getString());
+        } else {
+            //this.add(currentArmor);
+            System.out.println("Current armor is better or equal: " + currentArmor.getDisplayName().getString());
+        }
+
+        return bestArmor;
+    }
+
+    private int getMaterialTier(ArmorMaterial material) {
+        if (material == ArmorMaterials.LEATHER) return 1;
+        if (material == ArmorMaterials.GOLD) return 2;
+        if (material == ArmorMaterials.CHAIN) return 3;
+        if (material == ArmorMaterials.IRON) return 4;
+        if (material == ArmorMaterials.DIAMOND) return 5;
+        if (material == ArmorMaterials.NETHERITE) return 6;
+        return -1;
+    }
+    private int getArmorIndex(TagKey<Item> tag){
+        if(tag == Tags.Items.ARMORS_BOOTS) return 0;
+        if(tag == Tags.Items.ARMORS_LEGGINGS) return 1;
+        if(tag == Tags.Items.ARMORS_CHESTPLATES) return 2;
+        if(tag == Tags.Items.ARMORS_HELMETS) return 3;
+        return -1;
+    }
     public void equipArmor() {
         owner.setItemSlot(EquipmentSlot.HEAD,this.armor.get(3));
         owner.setItemSlot(EquipmentSlot.CHEST,this.armor.get(2));
