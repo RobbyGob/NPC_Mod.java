@@ -2,6 +2,7 @@ package io.github.RobbyGob.npc.entity;
 
 import io.github.RobbyGob.npc.entity.inventory.NPCContainer;
 import io.github.RobbyGob.npc.goal.FarmGoal;
+import io.github.RobbyGob.npc.goal.MineBlockGoal;
 import io.github.RobbyGob.npc.goal.tryMoveToGoal;
 import io.github.RobbyGob.npc.init.EntityInit;
 import net.minecraft.core.BlockPos;
@@ -54,6 +55,9 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
     private boolean IS_FARMING = false;
     private boolean IS_HUNTING = false;
     private boolean IS_AGGRESSIVE = true;
+    private boolean busyMining = false;
+
+    private Block targetBlock = null;
 
     private final NPCContainer inventory;
     private Vec3 vec3 = null;
@@ -78,32 +82,40 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
         // Basic goals
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new TemptGoal(this, 1.5D, Ingredient.of(NPC_CONTROLLER.get()), false));
-        this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
-        this.targetSelector.addGoal(3, new HurtByTargetGoal(this));
-        this.goalSelector.addGoal(4, new MoveTowardsTargetGoal(this, 0.9D, 32.0F));
+        this.goalSelector.addGoal(2, new tryMoveToGoal(this, vec3));
+        this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(4, new MoveTowardsTargetGoal(this, 0.9D, 16.0F));
+        this.targetSelector.addGoal(5, new HurtByTargetGoal(this));
 
         // Conditional goals
         if (IS_HUNTING) {
-            this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Animal.class, 1, false, true, (target) -> {
+            this.targetSelector.addGoal(6, new NearestAttackableTargetGoal<>(this, Animal.class, 1, false, true, (target) -> {
                 return target instanceof Cow || target instanceof Pig || target instanceof Chicken || target instanceof Sheep;
             }));
         }
 
         if (IS_FARMING) {
-            this.goalSelector.addGoal(5, new FarmGoal(this));
+            this.goalSelector.addGoal(7, new FarmGoal(this));
         }
 
-
-        if(IS_AGGRESSIVE)
-        {
-            this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
-            this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Mob.class, 1, false, true, (p_28879_) -> {
+        if (IS_AGGRESSIVE) {
+            this.goalSelector.addGoal(8, new MeleeAttackGoal(this, 1.0D, true));
+            this.targetSelector.addGoal(9, new NearestAttackableTargetGoal<>(this, Mob.class, 1, false, true, (p_28879_) -> {
                 return p_28879_ instanceof Enemy && !(p_28879_ instanceof Creeper);
             }));
         }
 
-        // MoveToGoal should be registered appropriately based on its priority relative to others
-        this.goalSelector.addGoal(5, new tryMoveToGoal(this, vec3));
+        // Add MineBlockGoal
+            this.goalSelector.addGoal(10, new MineBlockGoal(this, targetBlock));
+    }
+
+    public void setTargetBlock(Block input) {
+        targetBlock = input;
+        updateGoals();
+    }
+    public void removeTargetBlock(Block input) {
+        targetBlock = null;
+        updateGoals();
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -134,6 +146,7 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
     public void setNewTarget(Vec3 target)
     {
         vec3 = target;
+        updateGoals();
     }
     public void updateGoals()
     {
@@ -172,11 +185,20 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
 
     public void stopNPC()
     {
+        //this.getNavigation().stop();
         removeAllGoals();
     }
     public void continueNPC()
     {
         updateGoals();
+    }
+
+    public void setBusyMining(boolean busyMining) {
+        this.busyMining = busyMining;
+    }
+
+    public boolean isBusyMining() {
+        return busyMining;
     }
 
     public void startAggression()
@@ -525,7 +547,7 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
     }
 
 
-    private void hurtMainItemInHand(){
+    public void hurtMainItemInHand(){
         int damageAmount = 1;
         getMainHandItem().hurtAndBreak(damageAmount, this, (entity) -> {
             entity.broadcastBreakEvent(InteractionHand.MAIN_HAND);
@@ -580,5 +602,18 @@ public class EntityNPC extends PathfinderMob implements MenuProvider
     public boolean inventoryIsEmpty()
     {
         return inventory.isEmpty();
+    }
+
+    public void lookAt(double x, double y, double z, float yaw, float pitch) {
+        double xDiff = x - this.getX();
+        double yDiff = y - this.getEyeY();
+        double zDiff = z - this.getZ();
+        double distance = Math.sqrt(xDiff * xDiff + zDiff * zDiff);
+
+        float yawAngle = (float) Math.toDegrees(Math.atan2(zDiff, xDiff)) - 90.0F;
+        float pitchAngle = (float) Math.toDegrees(-Math.atan2(yDiff, distance));
+
+        this.setYRot(yawAngle);
+        this.setXRot(pitchAngle);
     }
 }

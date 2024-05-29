@@ -2,10 +2,13 @@ package io.github.RobbyGob.npc.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;;
 import io.github.RobbyGob.npc.entity.EntityNPC;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.blocks.BlockInput;
+import net.minecraft.commands.arguments.blocks.BlockPredicateArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -13,6 +16,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.server.ServerLifecycleHooks;
@@ -26,7 +31,7 @@ public class ControlCommands {
     private static final double OFFSET_X = 0.5;
     private static final double OFFSET_Z = 0.5;
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher){
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("npc")
                 .then(Commands.literal("moveTo")
                         .then(Commands.argument("destination", Vec3Argument.vec3()).executes(ControlCommands::moveToPos))
@@ -37,7 +42,42 @@ public class ControlCommands {
                 .then(Commands.literal("huntStop").executes(ControlCommands::stopTheHunt))
                 .then(Commands.literal("TestDiamondGear").executes(ControlCommands::Test))
                 .then(Commands.literal("startFarming").executes(ControlCommands::startFarming))
-                .then(Commands.literal("stopFarming").executes(ControlCommands::stopFarming)));
+                .then(Commands.literal("stopFarming").executes(ControlCommands::stopFarming))
+                .then(Commands.literal("setBlockType")
+                        .then(Commands.literal("diamondOre").executes(ControlCommands::startMiningDiamondOre))
+                        .then(Commands.literal("clearBlockType").executes(ControlCommands::stopMining))));
+    }
+
+    public static int startMiningDiamondOre(CommandContext<CommandSourceStack> context) {
+        Player player = getPlayer(context.getSource());
+        if (player != null) {
+            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            ServerLevel world = server.getLevel(OVERWORLD);
+
+            List<EntityNPC> npcList = getNPCsInRange(world, player.blockPosition(), 100);
+            for (EntityNPC npc : npcList) {
+                npc.setTargetBlock(Blocks.DIAMOND_ORE);
+            }
+            player.sendSystemMessage(Component.literal("Set targeted block type for NPCs to mine: Diamond Ore"));
+        }
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    public static int stopMining(CommandContext<CommandSourceStack> context) {
+        Player player = getPlayer(context.getSource());
+        if (player != null) {
+            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            ServerLevel world = server.getLevel(OVERWORLD);
+
+            List<EntityNPC> npcList = getNPCsInRange(world, player.blockPosition(), 100);
+            for (EntityNPC npc : npcList) {
+                npc.setTargetBlock(null);
+            }
+            player.sendSystemMessage(Component.literal("Stopped mining process"));
+        }
+
+        return Command.SINGLE_SUCCESS;
     }
 
     public static int startFarming(CommandContext<CommandSourceStack> command)

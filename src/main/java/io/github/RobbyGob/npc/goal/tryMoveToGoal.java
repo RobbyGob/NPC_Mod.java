@@ -36,6 +36,6 @@ public class tryMoveToGoal extends Goal {
     }
 
     public void tick() {
-        this.mob.getNavigation().moveTo(vec3.x, vec3.y, vec3.z, 1.5f);
+        this.mob.getNavigation().moveTo(vec3.x, vec3.y, vec3.z, 1.0f);
     }
 }

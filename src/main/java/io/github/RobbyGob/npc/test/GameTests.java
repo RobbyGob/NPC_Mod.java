@@ -10,6 +10,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 
@@ -19,6 +20,37 @@ import static net.minecraft.world.item.Items.*;
 @GameTestHolder(NPC_Mod.MODID)
 public class GameTests
 {
+    @GameTest(template = "npcmod:minetest")
+    public static void mine_test(GameTestHelper helper)
+    {
+        Vec3 vec3 = helper.absoluteVec(new Vec3(2.5,2,1.5));
+
+        EntityNPC npc = new EntityNPC(helper.getLevel(), vec3.x, vec3.y, vec3.z);
+        npc.stopNPC();
+        helper.getLevel().addFreshEntity(npc);
+
+        Player player = helper.makeMockPlayer();
+        player.teleportTo(npc.getX(), npc.getY(), npc.getZ());
+
+        CommandContext<CommandSourceStack> command = new CommandContext<>(
+                player.createCommandSourceStack(),
+                "/npc setBlockType diamondOre",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false);
+        ControlCommands manager = new ControlCommands();
+        int i = manager.startMiningDiamondOre(command);
+
+        helper.succeedWhen(()->{
+            helper.assertBlockNotPresent(Blocks.DIAMOND_ORE, new BlockPos(2, 2, 13));
+        });
+    }
+
     @GameTest(template = "npcmod:empty3x3x3")
     public static void summon_test(GameTestHelper helper)
     {
@@ -40,7 +72,8 @@ public class GameTests
         Vec3 vec3_target = new Vec3(vec3.x+9, vec3.y, vec3.z+9);
 
         EntityNPC npc = new EntityNPC(helper.getLevel(), vec3.x, vec3.y, vec3.z);
-        npc.stopNPC();
+        //npc.stopNPC();
+        //npc.stopAggression();
         helper.getLevel().addFreshEntity(npc);
 
         npc.setNewTarget(vec3_target);
@@ -61,7 +94,7 @@ public class GameTests
         helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 1,2,1);
 
         helper.succeedWhen(()->{
-            helper.assertEntityNotPresent(EntityType.ZOMBIE, 1,2,1);
+            helper.assertEntityNotPresent(EntityType.ZOMBIE, new BlockPos(1,2,1));
         });
     }
 
@@ -165,7 +198,7 @@ public class GameTests
         });
     }
 
-    @GameTest(template = "npcmod:pause_test", timeoutTicks = 100)
+    @GameTest(template = "npcmod:empty5x5x5", timeoutTicks = 100)
     public static void pause_test(GameTestHelper helper) {
 
         Vec3 vec3 = helper.absoluteVec(new Vec3(0.5,2,0.5));
@@ -178,7 +211,9 @@ public class GameTests
         Player player = helper.makeMockPlayer();
         player.teleportTo(vec3.x, vec3.y, vec3.z);
 
+        npc.stopAggression();
         npc.setNewTarget(vec3_target);
+
 
         CommandContext<CommandSourceStack> command = new CommandContext<>(
                 player.createCommandSourceStack(),
@@ -201,7 +236,7 @@ public class GameTests
         });
     }
 
-    @GameTest(template = "npcmod:pause_test", timeoutTicks = 100)
+    @GameTest(template = "npcmod:empty5x5x5", timeoutTicks = 100)
     public static void unpause_test(GameTestHelper helper) {
 
         Vec3 vec3 = helper.absoluteVec(new Vec3(0.5,2,0.5));
@@ -214,7 +249,9 @@ public class GameTests
         Player player = helper.makeMockPlayer();
         player.teleportTo(vec3.x, vec3.y, vec3.z);
 
+        npc.stopAggression();
         npc.setNewTarget(vec3_target);
+
 
         CommandContext<CommandSourceStack> command = new CommandContext<>(
                 player.createCommandSourceStack(),
